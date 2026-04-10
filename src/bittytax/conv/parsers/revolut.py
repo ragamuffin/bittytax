@@ -73,7 +73,7 @@ def parse_revolut(data_row: "DataRow", parser: DataParser, **_kwargs: Unpack[Par
             fee_asset=config.ccy,
             wallet=WALLET,
         )
-    elif row_dict["Type"] == "Learn reward":
+    elif row_dict["Type"] in ["Learn reward", "Staking reward"]:
         data_row.t_record = TransactionOutRecord(
             TrType.INCOME,
             data_row.timestamp,
