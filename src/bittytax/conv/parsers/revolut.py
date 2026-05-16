@@ -73,7 +73,7 @@ def parse_revolut(data_row: "DataRow", parser: DataParser, **_kwargs: Unpack[Par
             fee_asset=config.ccy,
             wallet=WALLET,
         )
-    elif row_dict["Type"] in ["Learn reward", "Staking reward"]:
+    elif row_dict["Type"] in "Learn reward":
         data_row.t_record = TransactionOutRecord(
             TrType.INCOME,
             data_row.timestamp,
@@ -81,6 +81,20 @@ def parse_revolut(data_row: "DataRow", parser: DataParser, **_kwargs: Unpack[Par
             buy_asset=row_dict["Symbol"],
             wallet=WALLET,
         )
+    elif row_dict["Type"] == "Staking reward":
+        data_row.t_record = TransactionOutRecord(
+            TrType.STAKING_REWARD,
+            data_row.timestamp,
+            buy_quantity=Decimal(row_dict["Quantity"].replace(",", "")),
+            buy_asset=row_dict["Symbol"],
+            wallet=WALLET,
+        )
+    elif row_dict["Type"] == "Stake":
+        # ignore stake as staking rewards is already catered for
+        pass
+    elif row_dict["Type"] == "Unstake":
+        # ignore unstake as staking rewards is already catered for
+        pass
     else:
         raise UnexpectedTypeError(parser.in_header.index("Type"), "Type", row_dict["Type"])
 
