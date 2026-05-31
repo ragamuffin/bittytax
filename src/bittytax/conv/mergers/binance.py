@@ -22,6 +22,7 @@ VaultId = NewType("VaultId", str)
 
 LIQUID_SWAP = VaultId("Liquid Swap")
 SIMPLE_EARN_FLEXIBLE = VaultId("Simple Earn Flexible")
+SIMPLE_EARN_LOCKED = VaultId("Simple Earn Locked")
 
 
 # Using a merger for Binance so we process the entire statements history in order
@@ -50,12 +51,22 @@ def merge_binance(data_files: Dict[FileId, "DataFile"]) -> bool:
             else:
                 _do_unstake(dr, vaults, SIMPLE_EARN_FLEXIBLE, is_exit(data_rows, dr))
             merge = True
+        elif dr.row_dict["Operation"] in (
+            "Simple Earn Locked Subscription",
+            "Simple Earn Locked Redemption",
+        ):
+            if Decimal(dr.row_dict["Change"]) < 0:
+                _do_stake(dr, vaults, SIMPLE_EARN_LOCKED)
+            else:
+                _do_unstake(dr, vaults, SIMPLE_EARN_LOCKED, is_exit(data_rows, dr))
+            merge = True
 
-    for vault_id, vault in vaults.items():
-        for asset in vault:
-            sys.stderr.write(
-                f"{Fore.CYAN}staked: '{vault_id}' {asset}={vault[asset].normalize():0,f}\n"
-            )
+    if config.binance_show_staked:
+        for vault_id, vault in vaults.items():
+            for asset in vault:
+                sys.stderr.write(
+                    f"{Fore.CYAN}staked: '{vault_id}' {asset}={vault[asset].normalize():0,f}\n"
+                )
     return merge
 
 
@@ -88,13 +99,23 @@ def _do_unstake(
     exit_vault: bool,
 ) -> None:
     if vault_id not in vaults:
-        raise ValueError(f"Vault: {vault_id} does not exist")
+        raise ValueError(
+            f"Vault: {vault_id} does not exist for {data_row.row_dict['Coin']} "
+            f"(unstake quantity={data_row.row_dict['Change']}, "
+            f"timestamp={data_row.timestamp}, "
+            f"line={data_row.line_num})"
+        )
 
     asset = AssetSymbol(data_row.row_dict["Coin"])
     quantity = Decimal(data_row.row_dict["Change"])
 
     if asset not in vaults[vault_id]:
-        raise AttributeError(f"Vault: {vault_id} does not contain {asset}")
+        raise AttributeError(
+            f"Vault: {vault_id} does not contain {asset} "
+            f"(unstake quantity={data_row.row_dict['Change']}, "
+            f"timestamp={data_row.timestamp}, "
+            f"line={data_row.line_num})"
+        )
 
     vaults[vault_id][asset] -= quantity
 

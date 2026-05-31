@@ -61,6 +61,7 @@ class Config:
         "coinbase_zero_fees_are_gifts": False,
         "binance_multi_bnb_split_even": False,
         "binance_statements_only": False,
+        "binance_show_staked": False,
     }
 
     OPTIONAL_CONFIG = (
