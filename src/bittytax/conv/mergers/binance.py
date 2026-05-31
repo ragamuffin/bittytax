@@ -88,13 +88,23 @@ def _do_unstake(
     exit_vault: bool,
 ) -> None:
     if vault_id not in vaults:
-        raise ValueError(f"Vault: {vault_id} does not exist")
+        raise ValueError(
+            f"Vault: {vault_id} does not exist for {data_row.row_dict['Coin']} "
+            f"(unstake quantity={data_row.row_dict['Change']}, "
+            f"timestamp={data_row.timestamp}, "
+            f"line={data_row.line_num})"
+        )
 
     asset = AssetSymbol(data_row.row_dict["Coin"])
     quantity = Decimal(data_row.row_dict["Change"])
 
     if asset not in vaults[vault_id]:
-        raise AttributeError(f"Vault: {vault_id} does not contain {asset}")
+        raise AttributeError(
+            f"Vault: {vault_id} does not contain {asset} "
+            f"(unstake quantity={data_row.row_dict['Change']}, "
+            f"timestamp={data_row.timestamp}, "
+            f"line={data_row.line_num})"
+        )
 
     vaults[vault_id][asset] -= quantity
 
